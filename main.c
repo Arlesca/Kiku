@@ -1,6 +1,8 @@
 #include <json-glib/json-glib.h>
 #include <libsoup/soup.h>
 
+// Necessary to print characters other than a-z
+// Kind of important when listening to k/j-pop
 #include <stdio.h>
 
 void list_artists(JsonArray* array, guint index_, JsonNode* element_node, gpointer user_data)
@@ -95,9 +97,30 @@ static void on_connection(SoupSession *session, GAsyncResult *res, gpointer data
 
 int main(int argc, char *argv[])
 {
+    if (argc < 2)
+    {
+        fprintf(stderr, "Usage: kiku [-j] [-k]\n");
+
+        return 1;
+    }
+
+    char radio_url[35];
+
+    // Since 'strcmp' returns 0 if true
+    // Reverse it to make 'if' correct.
+    if (!strcmp(argv[1], "-j"))
+        strcpy(radio_url, "wss://listen.moe/gateway_v2)");
+    else if (!strcmp(argv[1], "-k"))
+        strcpy(radio_url, "wss://listen.moe/kpop/gateway_v2)");
+    else {
+        fprintf(stderr, "'%s' is not a valid option\n", argv[1]);
+        
+        return 2;
+    }
+
     GMainLoop *loop = g_main_loop_new(NULL, FALSE);
     SoupSession *WebSocketSession = soup_session_new();
-    SoupMessage *msg = soup_message_new(SOUP_METHOD_GET, "wss://listen.moe/gateway_v2");
+    SoupMessage *msg = soup_message_new(SOUP_METHOD_GET, radio_url);
 
     soup_session_websocket_connect_async(WebSocketSession,
         msg,
